@@ -2,6 +2,8 @@ import * as THREE from 'https://esm.sh/three@0.160.0';
 import { OrbitControls } from 'https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
 
+
+
 // --- Scene ---
 const scene = new THREE.Scene();
 
@@ -23,9 +25,32 @@ renderer.setClearColor(0x000000);document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
-controls.enabled = false; // start in follow mode
+controls.enableRotate = true;
+controls.enablePan = true;
+controls.enableZoom = true;
+
+// Constrain zoom
+controls.minDistance = 1;
+controls.maxDistance = 200;
+
+
+
+// // Constrain vertical rotation (prevents camera flipping)
+// controls.maxPolarAngle = Math.PI / 2; // 90 degrees
+// controls.minPolarAngle = 0;           // ground level
+// controls.enabled = false;             // follow mode default
+
 
 let cameraMode = 'follow'; // 'follow' or 'explore'
+
+
+//-- mouse--
+const mouse = new THREE.Vector2(); // normalized coordinates
+window.addEventListener('mousemove', (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+});
+
 
 
 
@@ -39,7 +64,7 @@ const dt = 0.0001; // the smaller this is the better for accuracy, but the more 
 let state = { x: 1, y: 1, z: 1 };
 
 // --- Geometry ---
-const maxPoints = 200000;
+const maxPoints = 2000000;
 const positions = new Float32Array(maxPoints * 3);
 let drawCount = 0;
 
@@ -53,28 +78,38 @@ const material = new THREE.LineBasicMaterial({
 
 const line = new THREE.Line(geometry, material);
 scene.add(line);
+
+// Glow effect using a thicker, semi-transparent line
+const glowMaterial = new THREE.LineBasicMaterial({
+   color: 0xffd400,
+   transparent: true,
+   opacity: 0.3
+});
+const glowLine = new THREE.Line(geometry, glowMaterial);
+scene.add(glowLine);
+
 function updateFollowCamera() {
    const target = new THREE.Vector3(state.x, state.y, state.z);
 
    // where the camera should be relative to the trajectory
-   const offset = new THREE.Vector3(5, 5, 5);
+   const offset = new THREE.Vector3(1, 1, 1);
 
    camera.position.lerp(target.clone().add(offset), 0.02);
    camera.lookAt(target);
 }
 
+controls.zoomSpeed = 1.2;  // adjust sensitivity
+
 
 
 // --- Time variables ---
-
 // --- Wall-clock time mapping ---
-const startTime = new Date('2026-01-18T15:58:00').getTime();
+const startTime = new Date('2026-01-18T18:19:00').getTime();
 
 // Lorenz time units per real second (tweak later)
-const lorenzRate = 0.1;
-
+const lorenzRate = 0.00005;
 let timeSinceLastRenderPoint = 0;
-const renderInterval = 0.005; // Lorenz time units (tune this)
+const renderInterval = 0.0001; // Lorenz time units (tune this)
 let simulatedTime = 0;
 
 
@@ -171,9 +206,11 @@ function animate() {
          }
       }
 
+
    if (cameraMode === 'follow') {
      updateFollowCamera();
    } else {
+      
      controls.update();
    }
 
@@ -197,7 +234,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-
+// --- UI ---
 const ui = document.createElement('div');
 ui.style.position = 'fixed';
 ui.style.top = '12px';
@@ -234,6 +271,25 @@ exploreBtn.onclick = () => {
   controls.enabled = true;
 
   // zoom out to see the full attractor
-  camera.position.set(0, 0, 120);
+  camera.position.set(0, 0, 80);
   controls.target.set(0, 0, 0);
 };
+
+[followBtn, exploreBtn].forEach(btn => {
+  btn.style.marginRight = '8px';
+  btn.style.background = 'rgba(0,0,0,0.5)';
+  btn.style.color = '#ffd400';
+  btn.style.border = '1px solid #ffd400';
+  btn.style.borderRadius = '4px';
+  btn.style.padding = '4px 8px';
+  btn.style.fontFamily = 'sans-serif';
+  btn.style.fontSize = '13px';
+  btn.style.cursor = 'pointer';
+  btn.style.transition = '0.2s';
+});
+
+[followBtn, exploreBtn].forEach(btn => {
+  btn.addEventListener('mouseover', () => btn.style.background = 'rgba(255, 212, 0, 0.1)');
+  btn.addEventListener('mouseout', () => btn.style.background = 'rgba(0,0,0,0.5)');
+});
+
