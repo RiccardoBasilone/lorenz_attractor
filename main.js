@@ -43,17 +43,6 @@ controls.maxDistance = 200;
 
 let cameraMode = 'follow'; // 'follow' or 'explore'
 
-
-//-- mouse--
-const mouse = new THREE.Vector2(); // normalized coordinates
-window.addEventListener('mousemove', (event) => {
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-});
-
-
-
-
 // --- Lorenz parameters ---
 const sigma = 10;
 const rho = 28;
@@ -63,7 +52,7 @@ const dt = 0.0001; // the smaller this is the better for accuracy, but the more 
 // Initial condition
 let state = { x: 1, y: 1, z: 1 };
 
-// --- Geometry ---
+// --- Line Geometry ---
 const maxPoints = 2000000;
 const positions = new Float32Array(maxPoints * 3);
 let drawCount = 0;
@@ -79,14 +68,27 @@ const material = new THREE.LineBasicMaterial({
 const line = new THREE.Line(geometry, material);
 scene.add(line);
 
-// Glow effect using a thicker, semi-transparent line
-const glowMaterial = new THREE.LineBasicMaterial({
-   color: 0xffd400,
-   transparent: true,
-   opacity: 0.3
+// --- Current point marker ---
+
+const currentPointGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+const currentPointMaterial = new THREE.MeshStandardMaterial({
+  color: 0xff3333
 });
-const glowLine = new THREE.Line(geometry, glowMaterial);
-scene.add(glowLine);
+currentPointMaterial.emissive = new THREE.Color(0xff3333);
+currentPointMaterial.emissiveIntensity = 1;
+// Add a light to make the emissive material visible
+const light = new THREE.PointLight(0xffffff, 1, 100);
+light.position.set(10, 10, 10);
+scene.add(light);
+
+const currentPoint = new THREE.Mesh(
+  currentPointGeometry,
+  currentPointMaterial
+  
+);
+
+scene.add(currentPoint);
+
 
 function updateFollowCamera() {
    const target = new THREE.Vector3(state.x, state.y, state.z);
@@ -104,10 +106,10 @@ controls.zoomSpeed = 1.2;  // adjust sensitivity
 
 // --- Time variables ---
 // --- Wall-clock time mapping ---
-const startTime = new Date('2026-01-18T18:19:00').getTime();
+const startTime = new Date('2025-10-18T18:19:00').getTime();
 
 // Lorenz time units per real second (tweak later)
-const lorenzRate = 0.00005;
+const lorenzRate = 0.000025;
 let timeSinceLastRenderPoint = 0;
 const renderInterval = 0.0001; // Lorenz time units (tune this)
 let simulatedTime = 0;
@@ -205,6 +207,7 @@ function animate() {
             drawCount++;
          }
       }
+      currentPoint.position.set(state.x, state.y, state.z);
 
 
    if (cameraMode === 'follow') {
