@@ -22,13 +22,13 @@ document.body.appendChild(renderer.domElement);
 const sigma = 10;
 const rho = 28;
 const beta = 8 / 3;
-const dt = 0.0001;
+const dt = 0.0001; // the smaller this is the better for accuracy, but the more points will be in the buffer
 
 // Initial condition
 let state = { x: 1, y: 1, z: 1 };
 
 // --- Geometry ---
-const maxPoints = 100000;
+const maxPoints = 200000;
 const positions = new Float32Array(maxPoints * 3);
 let drawCount = 0;
 
@@ -46,13 +46,13 @@ scene.add(line);
 // --- Time variables ---
 
 // --- Wall-clock time mapping ---
-const startTime = new Date('2026-01-17T12:20:00').getTime();
+const startTime = new Date('2026-01-18T14:52:00').getTime();
 
 // Lorenz time units per real second (tweak later)
-const lorenzRate = 0.00005;
+const lorenzRate = 0.1;
 
 let timeSinceLastRenderPoint = 0;
-const renderInterval = 0.05; // Lorenz time units (tune this)
+const renderInterval = 0.005; // Lorenz time units (tune this)
 let simulatedTime = 0;
 
 
@@ -134,18 +134,21 @@ function animate() {
 
   // Advance the system until we catch up to wall-clock time
   while (simulatedTime < targetLorenzTime) {
-    state = stepLorenzRK4(state);
-    simulatedTime += dt;
+   state = stepLorenzRK4(state);
+   simulatedTime += dt;
+   timeSinceLastRenderPoint += dt;
 
-    if (drawCount < maxPoints) {
-      positions[3 * drawCount]     = state.x;
-      positions[3 * drawCount + 1] = state.y;
-      positions[3 * drawCount + 2] = state.z;
-      drawCount++;
-    } else {
-      // stop adding points if buffer is full
-      break;
-    }
+      if (timeSinceLastRenderPoint >= renderInterval) {
+         timeSinceLastRenderPoint = 0;
+
+         if (drawCount < maxPoints) {
+            positions[3 * drawCount]     = state.x;
+            positions[3 * drawCount + 1] = state.y;
+            positions[3 * drawCount + 2] = state.z;
+            drawCount++;
+         }
+      }
+
   }
 
   geometry.setDrawRange(0, drawCount);
