@@ -70,11 +70,11 @@ scene.add(line);
 
 // --- Current point marker ---
 
-const currentPointGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+const currentPointGeometry = new THREE.SphereGeometry(0.2, 16, 16);
 const currentPointMaterial = new THREE.MeshStandardMaterial({
-   color: 0x00ff00
+  color: 0xff3333
 });
-currentPointMaterial.emissive = new THREE.Color(0x00ff00);
+currentPointMaterial.emissive = new THREE.Color(0xff3333);
 currentPointMaterial.emissiveIntensity = 1;
 // Add a light to make the emissive material visible
 const light = new THREE.PointLight(0xffffff, 1, 100);
@@ -97,7 +97,7 @@ function updateFollowCamera() {
   const offset = new THREE.Vector3(2, 1, 2);
   const desiredPosition = targetPos.clone().add(offset);
 
-  const cameraAlpha = 0.01;
+  const cameraAlpha = 0.02;
   const cameraSubsteps = 20;
 
   for (let i = 0; i < cameraSubsteps; i++) {
@@ -115,7 +115,7 @@ controls.zoomSpeed = 1.2;  // adjust sensitivity
 
 // --- Time variables ---
 // --- Wall-clock time mapping ---
-const startTime = new Date('2026-01-20T12:00:00').getTime();
+const startTime = new Date('2025-10-18T18:19:00').getTime();
 
 // Lorenz time units per real second (tweak later)
 const lorenzRate = 0.000025;
@@ -123,12 +123,6 @@ let timeSinceLastRenderPoint = 0;
 const renderInterval = 0.0001; // Lorenz time units (tune this)
 let simulatedTime = 0;
 
-function getElapsedDays() {
-  const now = Date.now();
-  const elapsedMs = now - startTime;
-  const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
-  return Math.min(90, Math.max(0, elapsedDays));
-}
 
 
 // --- Lorenz step ---
@@ -240,6 +234,7 @@ function renderLoop() {
   } else {
     controls.update();
   }
+
   renderer.render(scene, camera);
 }
 
@@ -270,102 +265,6 @@ const followBtn = document.createElement('button');
 followBtn.textContent = 'follow';
 const exploreBtn = document.createElement('button');
 exploreBtn.textContent = 'explore';
-
-const dayCounter = document.createElement('div');
-dayCounter.style.marginTop = '8px';
-dayCounter.style.opacity = '0.85';
-ui.appendChild(dayCounter);
-
-const explainBtn = document.createElement('button');
-explainBtn.textContent = 'explain';
-ui.appendChild(explainBtn);
-
-const overlay = document.createElement('div');
-overlay.style.position = 'fixed';
-overlay.style.top = '0';
-overlay.style.left = '0';
-overlay.style.width = '100%';
-overlay.style.height = '100%';
-overlay.style.background = 'rgba(0, 0, 0, 0.85)';
-overlay.style.color = '#ffd400';
-overlay.style.display = 'none';
-overlay.style.zIndex = '20';
-overlay.style.padding = '40px';
-overlay.style.boxSizing = 'border-box';
-overlay.style.fontFamily = 'sans-serif';
-
-document.body.appendChild(overlay);
-const closeBtn = document.createElement('div');
-closeBtn.textContent = '✕';
-closeBtn.style.position = 'absolute';
-closeBtn.style.top = '20px';
-closeBtn.style.right = '30px';
-closeBtn.style.cursor = 'pointer';
-closeBtn.style.fontSize = '20px';
-
-const text = document.createElement('div');
-text.style.maxWidth = '700px';
-text.style.margin = '80px auto';
-text.style.lineHeight = '1.6';
-text.style.fontSize = '13px';
-
-text.innerHTML = `
-<p>
-Più di tutto, più di ogni cosa, abbiamo caro il tempo. vogliamo averne tanto da dare a chi amiamo, e vogliamo averne tanto per noi.
-Adesso, per tre mesi, la vita ti ha messo in una posizione da dare tempo a te stesso. 
-Non devi preoccuparti per noi, Da. Questi mesi ci cambieranno ma non cambieranno l'affetto, il bene che ci vogliamo.
-Quello dipende solo dalle persone che siamo. 
-</p>
-
-<p>
-In questi tre mesi su questa pagina web crescerà qualcosa. 
-Non voglio dirti cosa, tanto quando vuoi potrai tornare a questo link e vedere come sta andando la crescita.
-Il pallino verde percorrerà una traiettoria che non si ripete mai, non interseca mai punti del suo passato. 
-Viaggia in avanti nel tempo, come noi.
-</p>
-<p>
-La cosa che mi piace però delle traiettorie, è che rimangono visibili, dall'inizio alla fine. 
-Quando ti succede qualcosa che ti vuoi ricordare, puoi venire qui e fare uno screenshot. 
-Magari a fine viaggio avrai un collage di momenti importanti da associare a questa traiettoria.
-</p>
-<p>
-A occhio nudo i cambiamenti non si vedranno, ma col tempo sì. Again: proprio come noi.
-</p>
-
-<p>
-Questa traiettoria è una traiettoria caotica. Significa che ha una forte dipendenza dalle condizioni iniziali.
-La traiettoria finale che vedrai tra tre mesi sarà completamente diversa da quella che avresti visto se io avessi 
-piantato il seme anche un solo seconodo prima o dopo. Insomma, anche piccolissimi cambiamenti iniziali possono portare
-a gigantesche differenze finali. E io penso che tre mesi, in tutta una vita, siano effettivamente un piccolo cambiamento.
-</p>
-<p> 
-Dentro la crisalide, il bruco si liquefa, e si ricrea da capo. è un processo disgustoso, e io non so se in quella melma
-esso conservi lo stato di coscienza che aveva quando era bruco. 
-So però che le metamorfosi migliori richiedono tempo. Il bruco emerge come meravigliosa farfalla, e prosegue la sua vita
-potendo accedere ad una nuova dimensione (l'aria) prima inaccessibile.
-</p>
-<p>
-E quando infine la farfalla batte le ali e vola via, nessuno sa quello che succederà. 
-Da un semplice battito d'ali, si può creare una tempesta infinta, oppure una semplice folata d'aria.
-Ma in ogni caso, qualsiasi sia l'intensità del vento, quando si alza tu sai cosa bisogna fare. Anzi, tentare di fare.
-</p>
-
-<p>
-Ti voglio bene. Saluta il Nord America per me.
-</p>
-`;
-
-overlay.appendChild(closeBtn);
-overlay.appendChild(text);
-
-explainBtn.onclick = () => {
-  overlay.style.display = 'block';
-};
-
-closeBtn.onclick = () => {
-  overlay.style.display = 'none';
-};
-
 
 [followBtn, exploreBtn].forEach(btn => {
   btn.style.marginRight = '8px';
