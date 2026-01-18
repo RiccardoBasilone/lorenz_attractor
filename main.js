@@ -43,40 +43,119 @@ const material = new THREE.LineBasicMaterial({
 const line = new THREE.Line(geometry, material);
 scene.add(line);
 
-// --- Lorenz step (Euler for now) ---
-function stepLorenz(s) {
-  const dx = sigma * (s.y - s.x);
-  const dy = s.x * (rho - s.z) - s.y;
-  const dz = s.x * s.y - beta * s.z;
+// --- Time variables ---
 
+// --- Wall-clock time mapping ---
+const startTime = new Date('2026-01-17T12:20:00').getTime();
+
+// Lorenz time units per real second (tweak later)
+const lorenzRate = 0.00005;
+
+let timeSinceLastRenderPoint = 0;
+const renderInterval = 0.05; // Lorenz time units (tune this)
+let simulatedTime = 0;
+
+
+
+// --- Lorenz step ---
+function lorenzDeriv(s) {
   return {
-    x: s.x + dx * dt,
-    y: s.y + dy * dt,
-    z: s.z + dz * dt
+    x: sigma * (s.y - s.x),
+    y: s.x * (rho - s.z) - s.y,
+    z: s.x * s.y - beta * s.z
   };
 }
 
-// --- Animation loop ---
-function animate() {
-  requestAnimationFrame(animate);
+function stepLorenzRK4(s) {
+  const k1 = lorenzDeriv(s);
 
-  // Integrate a few steps per frame for smoother growth
-  for (let i = 0; i < 5; i++) {
-    state = stepLorenz(state);
+  const k2 = lorenzDeriv({
+    x: s.x + 0.5 * dt * k1.x,
+    y: s.y + 0.5 * dt * k1.y,
+    z: s.z + 0.5 * dt * k1.z
+  });
+
+  const k3 = lorenzDeriv({
+    x: s.x + 0.5 * dt * k2.x,
+    y: s.y + 0.5 * dt * k2.y,
+    z: s.z + 0.5 * dt * k2.z
+  });
+
+  const k4 = lorenzDeriv({
+    x: s.x + dt * k3.x,
+    y: s.y + dt * k3.y,
+    z: s.z + dt * k3.z
+  });
+
+  return {
+    x: s.x + (dt / 6) * (k1.x + 2 * k2.x + 2 * k3.x + k4.x),
+    y: s.y + (dt / 6) * (k1.y + 2 * k2.y + 2 * k3.y + k4.y),
+    z: s.z + (dt / 6) * (k1.z + 2 * k2.z + 2 * k3.z + k4.z)
+  };
+}
+
+// --- Catch up to current time before resuming slow animation---
+function catchUpToNow() {
+  const now = Date.now();
+  const elapsedSeconds = (now - startTime) / 1000;
+  const targetLorenzTime = elapsedSeconds * lorenzRate;
+
+  const stepsNeeded = Math.floor(
+    (targetLorenzTime - simulatedTime) / dt
+  );
+
+  for (let i = 0; i < stepsNeeded; i++) {
+    state = stepLorenzRK4(state);
+    simulatedTime += dt;
 
     if (drawCount < maxPoints) {
       positions[3 * drawCount]     = state.x;
       positions[3 * drawCount + 1] = state.y;
       positions[3 * drawCount + 2] = state.z;
       drawCount++;
-      geometry.setDrawRange(0, drawCount);
     }
   }
 
+  geometry.setDrawRange(0, drawCount);
   geometry.attributes.position.needsUpdate = true;
+}
+
+
+
+
+
+// --- Animation loop ---
+function animate() {
+  requestAnimationFrame(animate);
+
+  const now = Date.now();
+  const elapsedSeconds = (now - startTime) / 1000;
+  const targetLorenzTime = elapsedSeconds * lorenzRate;
+
+  // Advance the system until we catch up to wall-clock time
+  while (simulatedTime < targetLorenzTime) {
+    state = stepLorenzRK4(state);
+    simulatedTime += dt;
+
+    if (drawCount < maxPoints) {
+      positions[3 * drawCount]     = state.x;
+      positions[3 * drawCount + 1] = state.y;
+      positions[3 * drawCount + 2] = state.z;
+      drawCount++;
+    } else {
+      // stop adding points if buffer is full
+      break;
+    }
+  }
+
+  geometry.setDrawRange(0, drawCount);
+  geometry.attributes.position.needsUpdate = true;
+
   renderer.render(scene, camera);
 }
 
+
+catchUpToNow();
 animate();
 
 // --- Resize handling ---
