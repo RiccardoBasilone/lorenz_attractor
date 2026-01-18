@@ -326,7 +326,7 @@ Quello dipende solo dalle persone che siamo.
 In questi tre mesi su questa pagina web crescerà qualcosa. 
 Non voglio dirti cosa, tanto quando vuoi potrai tornare a questo link e vedere come sta andando la crescita.
 Il pallino verde percorrerà una traiettoria che non si ripete mai, non interseca mai punti del suo passato. 
-Viaggia in avanti nel tempo, per forza, come noi.
+Viaggia in avanti nel tempo, come noi.
 </p>
 <p>
 La cosa che mi piace però delle traiettorie, è che rimangono visibili, dall'inizio alla fine. 
