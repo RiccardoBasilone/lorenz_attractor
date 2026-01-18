@@ -1,4 +1,6 @@
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import * as THREE from 'https://esm.sh/three@0.160.0';
+import { OrbitControls } from 'https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
 
 // --- Scene ---
 const scene = new THREE.Scene();
@@ -15,8 +17,17 @@ camera.position.z = 60;
 // --- Renderer ---
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x000000);
-document.body.appendChild(renderer.domElement);
+renderer.setClearColor(0x000000);document.body.appendChild(renderer.domElement);
+
+// --- Controls ---
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enabled = false; // start in follow mode
+
+let cameraMode = 'follow'; // 'follow' or 'explore'
+
+
 
 // --- Lorenz parameters ---
 const sigma = 10;
@@ -42,11 +53,22 @@ const material = new THREE.LineBasicMaterial({
 
 const line = new THREE.Line(geometry, material);
 scene.add(line);
+function updateFollowCamera() {
+   const target = new THREE.Vector3(state.x, state.y, state.z);
+
+   // where the camera should be relative to the trajectory
+   const offset = new THREE.Vector3(5, 5, 5);
+
+   camera.position.lerp(target.clone().add(offset), 0.02);
+   camera.lookAt(target);
+}
+
+
 
 // --- Time variables ---
 
 // --- Wall-clock time mapping ---
-const startTime = new Date('2026-01-18T14:52:00').getTime();
+const startTime = new Date('2026-01-18T15:58:00').getTime();
 
 // Lorenz time units per real second (tweak later)
 const lorenzRate = 0.1;
@@ -149,6 +171,13 @@ function animate() {
          }
       }
 
+   if (cameraMode === 'follow') {
+     updateFollowCamera();
+   } else {
+     controls.update();
+   }
+
+
   }
 
   geometry.setDrawRange(0, drawCount);
@@ -167,3 +196,44 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+
+const ui = document.createElement('div');
+ui.style.position = 'fixed';
+ui.style.top = '12px';
+ui.style.left = '12px';
+ui.style.color = '#ffd400';
+ui.style.fontFamily = 'sans-serif';
+ui.style.fontSize = '14px';
+ui.style.zIndex = '10';
+
+const followBtn = document.createElement('button');
+followBtn.textContent = 'follow';
+const exploreBtn = document.createElement('button');
+exploreBtn.textContent = 'explore';
+
+[followBtn, exploreBtn].forEach(btn => {
+  btn.style.marginRight = '8px';
+  btn.style.background = 'black';
+  btn.style.color = '#ffd400';
+  btn.style.border = '1px solid #ffd400';
+  btn.style.cursor = 'pointer';
+});
+
+ui.appendChild(followBtn);
+ui.appendChild(exploreBtn);
+document.body.appendChild(ui);
+
+followBtn.onclick = () => {
+  cameraMode = 'follow';
+  controls.enabled = false;
+};
+
+exploreBtn.onclick = () => {
+  cameraMode = 'explore';
+  controls.enabled = true;
+
+  // zoom out to see the full attractor
+  camera.position.set(0, 0, 120);
+  controls.target.set(0, 0, 0);
+};
